@@ -35,7 +35,7 @@ namespace Tests
 
         private static void BuildSchema(Configuration config)
         {
-            new SchemaExport(config).Create(false, true);
+            new SchemaExport(config).Create(true, true);
         }
     }
 }

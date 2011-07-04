@@ -20,4 +20,4 @@ You'll need to do the following after cloning the project:
 
 * Review the connection string in the app.config. Change the server name if you don't want to run against local sqlexpress.
 * Create a new empty database called GraphsInNHibernate.Tests
-* Running the database tests will (re)create the database objects. Occasionally, this will fail. The simplest thing to do here is to drop and recreate the database.
+* Running the database tests will (re)create the database objects. Changing the mappings can cause the schema generation script to fail with a SqlException like "There is already an object named 'XXX' in the database". The simplest thing to do here is to drop and recreate the database.

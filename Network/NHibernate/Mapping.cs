@@ -7,6 +7,8 @@ namespace Network.NHibernate
     {
         public void ApplyTo(Configuration configuration)
         {
+            // It's a small model, so we're mapping everything explicitly
+
             var mapper = new ModelMapper();
             mapper.Class<Node>(mapping =>
             {
@@ -22,7 +24,11 @@ namespace Network.NHibernate
                 });
                 mapping.Bag(x => x.RelatedNodes, bag =>
                 {
-                    bag.Key(x => x.Column("NodeId"));
+                    bag.Key(key =>
+                    {
+                        key.Column("NodeId");
+                        key.ForeignKey("FK_RelatedNode_Node_NodeId");
+                    });
                     bag.Table("RelatedNode");
                     bag.Cascade(Cascade.All);
                     bag.Fetch(CollectionFetchMode.Subselect);
@@ -34,11 +40,13 @@ namespace Network.NHibernate
                 mapping.ManyToOne(x => x.Relationship, manyToOne =>
                 {
                     manyToOne.Column("RelationshipId");
+                    manyToOne.ForeignKey("FK_RelatedNode_Relationship_RelationshipId");
                     manyToOne.Cascade(Cascade.All);
                 });
                 mapping.ManyToOne(x => x.Node, manyToOne =>
                 {
                     manyToOne.Column("RelatedNodeId");
+                    manyToOne.ForeignKey("FK_RelatedNode_Node_RelatedNodeId");
                     manyToOne.Cascade(Cascade.All);
                 });
             });

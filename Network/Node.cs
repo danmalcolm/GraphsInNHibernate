@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace Network
 {
-    public class Node
+    public class Node : IEquatable<Node>
     {
         public Node(string name) : this()
         {
@@ -44,6 +44,39 @@ namespace Network
             RelatedNodes.Add(relatedNode);
         }
 
+        public virtual bool IsRelatedTo(Node node)
+        {
+            return RelatedNodes.Any(x => x.Node == node);
+        }
+
+        public virtual RelatedNode GetLink(Node node)
+        {
+            if(!IsRelatedTo(node))
+            {
+                throw new ArgumentException("Not related to node " + node);
+            }
+            return RelatedNodes.Single(x => x.Node == node);
+        }
+
+        public virtual void UnlinkFrom(Node node)
+        {
+            if (!IsRelatedTo(node))
+            {
+                throw new ArgumentException("Not related to node " + node);
+            }
+            var relatedNode = GetLink(node);
+            RelatedNodes.Remove(relatedNode);
+            node.RemoveRelatedNodeInternal(this);
+        }
+
+        protected void RemoveRelatedNodeInternal(Node node)
+        {
+            var relatedNode = RelatedNodes.Single(x => x.Node == node);
+            RelatedNodes.Remove(relatedNode);
+        }
+
+        #region Equals / hashcode 
+
         public virtual bool Equals(Node other)
         {
             if (ReferenceEquals(null, other)) return false;
@@ -55,7 +88,7 @@ namespace Network
         {
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != typeof (Node)) return false;
+            if (!typeof (Node).IsAssignableFrom(obj.GetType())) return false;
             return Equals((Node) obj);
         }
 
@@ -63,5 +96,24 @@ namespace Network
         {
             return Name.GetHashCode();
         }
+
+        public static bool operator ==(Node left, Node right)
+        {
+            return Equals(left, right);
+        }
+
+        public static bool operator !=(Node left, Node right)
+        {
+            return !Equals(left, right);
+        }
+
+        public override string ToString()
+        {
+            return string.Format("Name: {0}", Name);
+        }
+
+        #endregion
+
+        
     }
 }
