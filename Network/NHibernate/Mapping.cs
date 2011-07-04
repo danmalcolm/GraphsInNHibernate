@@ -24,29 +24,25 @@ namespace Network.NHibernate
                 });
                 mapping.Bag(x => x.RelatedNodes, bag =>
                 {
-                    bag.Key(key =>
-                    {
-                        key.Column("NodeId");
-                        key.ForeignKey("FK_RelatedNode_Node_NodeId");
-                    });
+                    bag.Key(key => key.Column("StartNodeId"));
                     bag.Table("RelatedNode");
                     bag.Cascade(Cascade.All);
                     bag.Fetch(CollectionFetchMode.Subselect);
                 });
             });
 
-            mapper.Component<RelatedNode>(mapping =>
+            mapper.Component<RelatedNode>(component =>
             {
-                mapping.ManyToOne(x => x.Relationship, manyToOne =>
+                component.ManyToOne(x => x.Relationship, manyToOne =>
                 {
                     manyToOne.Column("RelationshipId");
                     manyToOne.ForeignKey("FK_RelatedNode_Relationship_RelationshipId");
-                    manyToOne.Cascade(Cascade.All.Include(Cascade.DeleteOrphans));
+                    manyToOne.Cascade(Cascade.Persist.Include(Cascade.Remove));
                 });
-                mapping.ManyToOne(x => x.Node, manyToOne =>
+                component.ManyToOne(x => x.End, manyToOne =>
                 {
-                    manyToOne.Column("OtherNodeId");
-                    manyToOne.ForeignKey("FK_RelatedNode_Node_OtherNodeId");
+                    manyToOne.Column("EndNodeId");
+                    manyToOne.ForeignKey("FK_RelatedNode_Node_EndNodeId");
                     manyToOne.Cascade(Cascade.All);
                 });
             });

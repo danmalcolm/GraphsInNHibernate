@@ -22,31 +22,31 @@ namespace Network
 
         public virtual IList<RelatedNode> RelatedNodes { get; protected set; }
 
-        public virtual void LinkTo(Node node, int distance)
+        public virtual void LinkTo(Node other, int distance)
         {
-            if (node == this)
+            if (other == this)
             {
                 throw new InvalidOperationException("Cannot relate a Node to itself");
             }
-            if (RelatedNodes.Any(x => x.Node == node))
+            if (RelatedNodes.Any(x => x.End == other))
             {
-                throw new ArgumentException("This node is already related to the node", "node");
+                throw new ArgumentException("This node is already related to the node", "other");
             }
             var relationship = new Relationship(distance);
-            var relatedNode = new RelatedNode(node, relationship);
+            var relatedNode = new RelatedNode(other, relationship);
             RelatedNodes.Add(relatedNode);
-            node.AddRelatedNodeInternal(this, relationship);
+            other.AddRelatedNodeInternal(this, relationship);
         }
 
-        protected void AddRelatedNodeInternal(Node node, Relationship relationship)
+        protected void AddRelatedNodeInternal(Node other, Relationship relationship)
         {
-            var relatedNode = new RelatedNode(node, relationship);
+            var relatedNode = new RelatedNode(other, relationship);
             RelatedNodes.Add(relatedNode);
         }
 
         public virtual bool IsRelatedTo(Node node)
         {
-            return RelatedNodes.Any(x => x.Node == node);
+            return RelatedNodes.Any(x => x.End == node);
         }
 
         public virtual RelatedNode GetLink(Node node)
@@ -55,7 +55,7 @@ namespace Network
             {
                 throw new ArgumentException("Not related to node " + node);
             }
-            return RelatedNodes.Single(x => x.Node == node);
+            return RelatedNodes.Single(x => x.End == node);
         }
 
         public virtual void UnlinkFrom(Node node)
@@ -71,7 +71,7 @@ namespace Network
 
         protected void RemoveRelatedNodeInternal(Node node)
         {
-            var relatedNode = RelatedNodes.Single(x => x.Node == node);
+            var relatedNode = RelatedNodes.Single(x => x.End == node);
             RelatedNodes.Remove(relatedNode);
         }
 

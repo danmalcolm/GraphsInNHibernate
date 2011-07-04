@@ -59,7 +59,14 @@ namespace Tests.GraphPersistenceSpecs
             });
         }
 
-
+        /// <summary>
+        /// Creates sequence of nodes, named A, B, C, D and E
+        /// </summary>
+        /// <returns></returns>
+        protected List<Node> CreateNodesAtoE()
+        {
+            return "ABCDE".Select(name => new Node(name.ToString())).ToList();
+        }
     }
 
     public class when_saving_node_with_no_related_nodes : PersistenceSpecification
@@ -133,7 +140,7 @@ namespace Tests.GraphPersistenceSpecs
             {
                 var endNode = session.GetNode(originalEndNode.Id);
                 Assert.That(endNode.RelatedNodes.Count, Is.EqualTo(1));
-                var startNode = endNode.RelatedNodes.Single().Node;
+                var startNode = endNode.RelatedNodes.Single().End;
                 Assert.That(startNode, Is.EqualTo(originalStartNode));
             });
         }
@@ -182,19 +189,17 @@ namespace Tests.GraphPersistenceSpecs
     public class when_unlinking_middle_node_from_network_5_levels_deep : PersistenceSpecification
     {
         private List<Node> originalNodes = new List<Node>();
-        private Relationship relationshipBetweenAandB;
-
+        
         protected override void because()
         {
             InNewSession(session =>
             {
-                originalNodes = "ABCDE".Select(name => new Node(name.ToString())).ToList(); // node for each char
+                originalNodes = CreateNodesAtoE(); // node for each char
                 originalNodes[A].LinkTo(originalNodes[B], 10);
                 originalNodes[B].LinkTo(originalNodes[C], 15);
                 originalNodes[C].LinkTo(originalNodes[D], 20);
                 originalNodes[D].LinkTo(originalNodes[E], 25);
                 session.SaveOrUpdate(originalNodes[A]);
-                relationshipBetweenAandB = originalNodes[A].GetLink(originalNodes[B]).Relationship;
             });
 
             InNewSession(session =>
@@ -234,31 +239,24 @@ namespace Tests.GraphPersistenceSpecs
             AssertNodesNotRelated(originalNodes[C], originalNodes[D]);
         }
 
-        [Test]
-        public void relationship_between_b_and_c_should_be_removed()
-        {
-            InNewSession(session =>
-            {
-                var relationship = session.Get<Relationship>(relationshipBetweenAandB.Id);
-                Assert.That(relationship, Is.Null);
-            });
-        }
     }
 
     public class when_unlinking_one_of_many_related_nodes : PersistenceSpecification
     {
         private List<Node> originalNodes = new List<Node>();
+        private Relationship relationshipBetweenAandB;
 
         protected override void because()
         {
             InNewSession(session =>
             {
-                originalNodes = "ABCDE".Select(name => new Node(name.ToString())).ToList(); // create nodes A to E
+                originalNodes = CreateNodesAtoE();
                 originalNodes[A].LinkTo(originalNodes[B], 10);
                 originalNodes[A].LinkTo(originalNodes[C], 15);
                 originalNodes[A].LinkTo(originalNodes[D], 20);
                 originalNodes[A].LinkTo(originalNodes[E], 25);
                 session.SaveOrUpdate(originalNodes[A]);
+                relationshipBetweenAandB = originalNodes[A].GetLink(originalNodes[B]).Relationship;
             });
 
             InNewSession(session =>
@@ -295,6 +293,17 @@ namespace Tests.GraphPersistenceSpecs
         {
             AssertNodesNotRelated(originalNodes[A], originalNodes[B]);
         }
+
+        [Test]
+        public void relationship_between_unlinked_nodes_should_be_removed()
+        {
+            InNewSession(session =>
+            {
+                var relationship = session.Get<Relationship>(relationshipBetweenAandB.Id);
+                Assert.That(relationship, Is.Null);
+            });
+        }
+
     }
 
     public static class SessionExtensions

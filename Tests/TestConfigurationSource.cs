@@ -1,9 +1,14 @@
 using System;
+using System.Collections.Generic;
+using System.Configuration;
+using HibernatingRhinos.Profiler.Appender;
+using HibernatingRhinos.Profiler.Appender.NHibernate;
 using Network.NHibernate;
 using NHibernate;
 using NHibernate.Cfg;
 using NHibernate.Dialect;
 using NHibernate.Tool.hbm2ddl;
+using Configuration = NHibernate.Cfg.Configuration;
 
 namespace Tests
 {
@@ -19,6 +24,11 @@ namespace Tests
 
         private static ISessionFactory CreateSessionFactory()
         {
+            if (ConfigurationManager.AppSettings["UseNHibernateProfiler"] == "true")
+            {
+                NHibernateProfiler.Initialize();
+            }
+
             var configuration = new Configuration()
                 .DataBaseIntegration(db =>
                 {
@@ -27,9 +37,11 @@ namespace Tests
                     db.BatchSize = 100;
                     db.LogFormattedSql = true;
                     db.LogSqlInConsole = true;
-                });
+                }).AddProperties(new Dictionary<string, string> { { "generate_statistics", "true"} });
             new Mapping().ApplyTo(configuration);
             BuildSchema(configuration);
+
+            
             return configuration.BuildSessionFactory();
         }
 

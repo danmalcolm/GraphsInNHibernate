@@ -1,16 +1,18 @@
+using System;
+
 namespace Network
 {
     public class RelatedNode
     {
-        public RelatedNode(Node node, Relationship relationship)
+        public RelatedNode(Node end, Relationship relationship)
         {
-            Node = node;
+            End = end;
             Relationship = relationship;
         }
 
         protected RelatedNode() {}
-
-        public virtual Node Node { get; protected set; }
+        
+        public virtual Node End { get; protected set; }
 
         public virtual Relationship Relationship { get; protected set; }
     }
