@@ -182,6 +182,7 @@ namespace Tests.GraphPersistenceSpecs
     public class when_unlinking_middle_node_from_network_5_levels_deep : PersistenceSpecification
     {
         private List<Node> originalNodes = new List<Node>();
+        private Relationship relationshipBetweenAandB;
 
         protected override void because()
         {
@@ -193,6 +194,7 @@ namespace Tests.GraphPersistenceSpecs
                 originalNodes[C].LinkTo(originalNodes[D], 20);
                 originalNodes[D].LinkTo(originalNodes[E], 25);
                 session.SaveOrUpdate(originalNodes[A]);
+                relationshipBetweenAandB = originalNodes[A].GetLink(originalNodes[B]).Relationship;
             });
 
             InNewSession(session =>
@@ -219,7 +221,7 @@ namespace Tests.GraphPersistenceSpecs
         }
 
         [Test]
-        public void outer_nodes_should_retain_relationships()
+        public void outer_nodes_should_remain_related()
         {
             AssertNodesRelated(originalNodes[A], originalNodes[B]);
             AssertNodesRelated(originalNodes[D], originalNodes[E]);
@@ -231,6 +233,16 @@ namespace Tests.GraphPersistenceSpecs
             AssertNodesNotRelated(originalNodes[B], originalNodes[C]);
             AssertNodesNotRelated(originalNodes[C], originalNodes[D]);
         }
+
+        [Test]
+        public void relationship_between_b_and_c_should_be_removed()
+        {
+            InNewSession(session =>
+            {
+                var relationship = session.Get<Relationship>(relationshipBetweenAandB.Id);
+                Assert.That(relationship, Is.Null);
+            });
+        }
     }
 
     public class when_unlinking_one_of_many_related_nodes : PersistenceSpecification
@@ -241,7 +253,7 @@ namespace Tests.GraphPersistenceSpecs
         {
             InNewSession(session =>
             {
-                originalNodes = "ABCDE".Select(name => new Node(name.ToString())).ToList(); // node for each char
+                originalNodes = "ABCDE".Select(name => new Node(name.ToString())).ToList(); // create nodes A to E
                 originalNodes[A].LinkTo(originalNodes[B], 10);
                 originalNodes[A].LinkTo(originalNodes[C], 15);
                 originalNodes[A].LinkTo(originalNodes[D], 20);

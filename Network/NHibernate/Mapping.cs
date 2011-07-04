@@ -41,12 +41,12 @@ namespace Network.NHibernate
                 {
                     manyToOne.Column("RelationshipId");
                     manyToOne.ForeignKey("FK_RelatedNode_Relationship_RelationshipId");
-                    manyToOne.Cascade(Cascade.All);
+                    manyToOne.Cascade(Cascade.All.Include(Cascade.DeleteOrphans).Include(Cascade.Remove));
                 });
                 mapping.ManyToOne(x => x.Node, manyToOne =>
                 {
-                    manyToOne.Column("RelatedNodeId");
-                    manyToOne.ForeignKey("FK_RelatedNode_Node_RelatedNodeId");
+                    manyToOne.Column("OtherNodeId");
+                    manyToOne.ForeignKey("FK_RelatedNode_Node_OtherNodeId");
                     manyToOne.Cascade(Cascade.All);
                 });
             });
