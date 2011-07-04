@@ -41,7 +41,7 @@ namespace Network.NHibernate
                 {
                     manyToOne.Column("RelationshipId");
                     manyToOne.ForeignKey("FK_RelatedNode_Relationship_RelationshipId");
-                    manyToOne.Cascade(Cascade.All.Include(Cascade.DeleteOrphans).Include(Cascade.Remove));
+                    manyToOne.Cascade(Cascade.All.Include(Cascade.DeleteOrphans));
                 });
                 mapping.ManyToOne(x => x.Node, manyToOne =>
                 {

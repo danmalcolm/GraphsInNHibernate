@@ -1,3 +1,4 @@
+using log4net.Config;
 using NUnit.Framework;
 
 namespace Tests
@@ -21,6 +22,7 @@ namespace Tests
 
 	    private void SetupSpecification()
 		{
+	        //BasicConfigurator.Configure();
 			before_set_up_context();
 			set_up_context();
 			after_set_up_context();
