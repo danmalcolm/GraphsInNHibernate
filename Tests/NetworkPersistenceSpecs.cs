@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Network;
 using NHibernate;
+using NHibernate.Criterion;
+using NHibernate.SqlCommand;
 using NUnit.Framework;
 
 namespace Tests.NetworkPersistenceSpecs
@@ -21,7 +23,7 @@ namespace Tests.NetworkPersistenceSpecs
         protected const int D = 3;
         protected const int E = 4;
 
-        private readonly ISessionFactory sessionFactory = TestConfigurationSource.SessionFactory;
+        protected readonly ISessionFactory sessionFactory = TestConfigurationSource.SessionFactory;
         protected ConnectionQuality LowConnectionQuality = new ConnectionQuality(2, 1);
         protected ConnectionQuality MediumConnectionQuality = new ConnectionQuality(5, 1);
         protected ConnectionQuality HighConnectionQuality = new ConnectionQuality(10, 1);
@@ -373,6 +375,9 @@ namespace Tests.NetworkPersistenceSpecs
     public class when_retrieving_network_of_5_nodes : PersistenceSpecification
     {
         private List<Node> originalNodes = new List<Node>();
+        private long entityLoadCount;
+        private long entityFetchCount;
+        private long prepareStatementCount;
 
         protected override void because()
         {
@@ -388,15 +393,26 @@ namespace Tests.NetworkPersistenceSpecs
 
             InNewSession(session =>
             {
-                var nodeA = session.GetNode(originalNodes[A].Id);
+                long entityLoadCountBefore = sessionFactory.Statistics.EntityLoadCount;
+                long entityFetchCountBefore = sessionFactory.Statistics.EntityFetchCount;
+                long prepareStatementCountBefore = sessionFactory.Statistics.PrepareStatementCount;
+            
+                var nodeA = session.CreateCriteria(typeof(Node))
+                    .Add(Restrictions.IdEq(originalNodes[A].Id))
+                     .CreateCriteria("Connections", JoinType.LeftOuterJoin).UniqueResult<Node>();
+ 
                 nodeA.DisplayConnections(10);
+
+                entityLoadCount = sessionFactory.Statistics.EntityLoadCount - entityLoadCountBefore;
+                entityFetchCount = sessionFactory.Statistics.EntityFetchCount - entityFetchCountBefore;
+                prepareStatementCount = sessionFactory.Statistics.PrepareStatementCount - prepareStatementCountBefore;
             });
         }
 
         [Test]
         public void unlinked_nodes_should_not_be_related()
         {
-            AssertNodesNotRelated(originalNodes[A], originalNodes[B]);
+            var queries = sessionFactory.Statistics.Queries;
         }
     }
 
