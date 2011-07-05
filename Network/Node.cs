@@ -75,6 +75,15 @@ namespace Network
             RelatedNodes.Remove(relatedNode);
         }
 
+        public virtual void UnlinkFromAll()
+        {
+            foreach (Node end in RelatedNodes.Select(x => x.End))
+            {
+                end.RemoveRelatedNodeInternal(this);
+            }
+            RelatedNodes.Clear();
+        }
+
         #region Equals / hashcode 
 
         public virtual bool Equals(Node other)

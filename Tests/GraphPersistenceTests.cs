@@ -253,6 +253,66 @@ namespace Tests.GraphPersistenceSpecs
 
     }
 
+    public class when_deleting_middle_node_from_network_5_levels_deep : PersistenceSpecification
+    {
+        private List<Node> originalNodes = new List<Node>();
+
+        protected override void because()
+        {
+            InNewSession(session =>
+            {
+                originalNodes = CreateNodesAtoE(); // node for each char
+                originalNodes[A].LinkTo(originalNodes[B], 10);
+                originalNodes[B].LinkTo(originalNodes[C], 15);
+                originalNodes[C].LinkTo(originalNodes[D], 20);
+                originalNodes[D].LinkTo(originalNodes[E], 25);
+                session.SaveOrUpdate(originalNodes[A]);
+            });
+
+            InNewSession(session =>
+            {
+                var nodeC = session.GetNode(originalNodes[C].Id);
+                nodeC.UnlinkFromAll();
+                session.Delete(nodeC);
+            });
+        }
+
+        [Test]
+        public void remaining_nodes_should_still_exist_in_database()
+        {
+            InNewSession(session =>
+            {
+                var remainingNodes = originalNodes.Where(x => x.Name != "C");
+                foreach (var node in remainingNodes)
+                {
+                    var retrieved = session.Get<Node>(node.Id);
+                    Assert.That(retrieved, Is.Not.Null, "original node {0} not retrieved", node);
+                }
+            });
+        }
+
+        [Test]
+        public void outer_nodes_should_remain_related()
+        {
+            AssertNodesRelated(originalNodes[A], originalNodes[B]);
+            AssertNodesRelated(originalNodes[D], originalNodes[E]);
+        }
+
+        [Test]
+        public void relationship_should_be_removed_from_nodes_originally_linked_to_middle_node()
+        {
+            InNewSession(session =>
+            {
+                var nodeB = session.GetNode(originalNodes[B].Id);
+                Assert.That(nodeB.RelatedNodes.Count, Is.EqualTo(1));
+
+                var nodeD = session.GetNode(originalNodes[D].Id);
+                Assert.That(nodeD.RelatedNodes.Count, Is.EqualTo(1));
+            });
+        }
+
+    }
+
     public class when_unlinking_one_of_many_related_nodes : PersistenceSpecification
     {
         private List<Node> originalNodes = new List<Node>();

@@ -8,19 +8,19 @@ namespace Network.NHibernate
         public void ApplyTo(Configuration configuration)
         {
             var mapper = new ModelMapper();
-            mapper.Class<Node>(mapping =>
+            mapper.Class<Node>(node =>
             {
-                mapping.Id(x => x.Id, map =>
+                node.Id(x => x.Id, map =>
                 {
                     map.Column("NodeId");
                     map.Generator(Generators.GuidComb);
                 });
-                mapping.Property(x => x.Name, map =>
+                node.Property(x => x.Name, map =>
                 {
                     map.Length(50);
                     map.Column("NodeName");
                 });
-                mapping.Bag(x => x.RelatedNodes, bag =>
+                node.Bag(x => x.RelatedNodes, bag =>
                 {
                     bag.Key(key => 
                     { 
@@ -28,36 +28,38 @@ namespace Network.NHibernate
                         key.ForeignKey("FK_RelatedNode_Node_StartNodeId");
                     });
                     bag.Table("RelatedNode");
-                    bag.Cascade(Cascade.All);
+                    bag.Cascade(Cascade.All.Include(Cascade.Remove));
                     bag.Fetch(CollectionFetchMode.Subselect);
                 });
             });
 
-            mapper.Component<RelatedNode>(component =>
+            mapper.Component<RelatedNode>(relatedNode =>
             {
-                component.Parent(x => x.Start);
-                component.ManyToOne(x => x.End, manyToOne =>
+                relatedNode.Parent(x => x.Start);
+                relatedNode.ManyToOne(x => x.End, manyToOne =>
                 {
                     manyToOne.Column("EndNodeId");
                     manyToOne.ForeignKey("FK_RelatedNode_Node_EndNodeId");
                     manyToOne.Cascade(Cascade.Persist);
+                    manyToOne.NotNullable(true);
                 });
-                component.ManyToOne(x => x.Relationship, manyToOne =>
+                relatedNode.ManyToOne(x => x.Relationship, manyToOne =>
                 {
                     manyToOne.Column("RelationshipId");
                     manyToOne.ForeignKey("FK_RelatedNode_Relationship_RelationshipId");
-                    manyToOne.Cascade(Cascade.Persist.Include(Cascade.Remove));
+                    manyToOne.Cascade(Cascade.All.Include(Cascade.Remove));
+                    manyToOne.NotNullable(true);
                 });
             });
 
-            mapper.Class<Relationship>(mapping =>
+            mapper.Class<Relationship>(relationship =>
             {
-                mapping.Id(x => x.Id, map =>
+                relationship.Id(x => x.Id, map =>
                 {
                     map.Column("RelationshipId");
                     map.Generator(Generators.GuidComb);
                 });
-                mapping.Property(x => x.Distance);
+                relationship.Property(x => x.Distance);
             });
             configuration.AddMapping(mapper.CompileMappingForAllExplicitAddedEntities());
         }
