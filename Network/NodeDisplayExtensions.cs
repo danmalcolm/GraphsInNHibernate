@@ -1,26 +1,34 @@
 using System;
 using System.Linq;
+using System.Text;
 
 namespace Network
 {
     public static class NodeDisplayExtensions
     {
-//        public static string DisplayRelated(this Node node)
-//        {
-//            var seed = new { depth = 1, summary = "" };
-//            return node.RelatedNodes.Aggregate(seed,
-//                                             (summary, link) =>
-//                                             new { depth = depth+1, summary = summary.summary + Environment.NewLine + link.Child.DisplayRelatedInternal(summary.depth + 1))};}
-//
-//        }
-//
-//        private static string DisplayRelatedInternal(this Node node, int depth)
-//        {
-//            var seed = new { depth = 1, summary = "" };
-//            return node.ChildLinks.Aggregate(seed,
-//                                             (summary, link) =>
-//                                             summary.summary + Environment.NewLine + link.Child.DisplayRelated());
-//
-//        }
+        public static string DisplayConnections(this Node node, int maxDepth)
+        {
+            var connections = new StringBuilder();
+            node.DisplayConnectionsInternal(null, 0, connections, maxDepth);
+            return connections.ToString();
+        }
+
+        public static void DisplayConnectionsInternal(this Node node, Node parent, int depth, StringBuilder connections, int maxDepth)
+        {
+            connections.AppendFormat("{0} Node {1}", ">".PadLeft(depth * 2, '-'), node.Name);
+            connections.AppendLine();
+
+            if(depth < maxDepth)
+            {
+                foreach(var connection in node.Connections)
+                {
+                    if(parent == null || connection.End != parent)
+                    {
+                        DisplayConnectionsInternal(connection.End, node, depth + 1, connections, maxDepth);
+                    }
+                }
+                
+            }
+        }
     }
 }

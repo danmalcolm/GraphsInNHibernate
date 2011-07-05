@@ -370,6 +370,36 @@ namespace Tests.NetworkPersistenceSpecs
         }
     }
 
+    public class when_retrieving_network_of_5_nodes : PersistenceSpecification
+    {
+        private List<Node> originalNodes = new List<Node>();
+
+        protected override void because()
+        {
+            InNewSession(session =>
+            {
+                originalNodes = CreateNodesAtoE();
+                originalNodes[A].AddConnection(originalNodes[B], HighConnectionQuality, MediumConnectionQuality);
+                originalNodes[A].AddConnection(originalNodes[C], HighConnectionQuality, MediumConnectionQuality);
+                originalNodes[A].AddConnection(originalNodes[D], HighConnectionQuality, MediumConnectionQuality);
+                originalNodes[A].AddConnection(originalNodes[E], HighConnectionQuality, MediumConnectionQuality);
+                session.SaveOrUpdate(originalNodes[A]);
+            });
+
+            InNewSession(session =>
+            {
+                var nodeA = session.GetNode(originalNodes[A].Id);
+                nodeA.DisplayConnections(10);
+            });
+        }
+
+        [Test]
+        public void unlinked_nodes_should_not_be_related()
+        {
+            AssertNodesNotRelated(originalNodes[A], originalNodes[B]);
+        }
+    }
+
     public static class SessionExtensions
     {
         public static Node GetNode(this ISession session, Guid id)
