@@ -55,8 +55,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="RelatedNode.cs" />
-    <Compile Include="Relationship.cs" />
+    <Compile Include="Connection.cs" />
+    <Compile Include="ConnectionQuality.cs" />
     <Compile Include="NHibernate\Mapping.cs" />
     <Compile Include="Node.cs" />
     <Compile Include="NodeDisplayExtensions.cs" />
