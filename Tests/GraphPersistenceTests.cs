@@ -118,6 +118,18 @@ namespace Tests.GraphPersistenceSpecs
         }
 
         [Test]
+        public void start_node_on_related_node_should_point_to_owner()
+        {
+            InNewSession(session =>
+            {
+                var retrieved = session.GetNode(originalStartNode.Id);
+                var relatedNode = retrieved.RelatedNodes.Single();
+                Assert.That(relatedNode, Is.Not.Null);
+                Assert.That(relatedNode.Start, Is.SameAs(retrieved));
+            });
+        }
+
+        [Test]
         public void end_node_should_be_saved()
         {
             InNewSession(session =>

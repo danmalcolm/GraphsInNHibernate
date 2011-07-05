@@ -7,8 +7,6 @@ namespace Network.NHibernate
     {
         public void ApplyTo(Configuration configuration)
         {
-            // It's a small model, so we're mapping everything explicitly
-
             var mapper = new ModelMapper();
             mapper.Class<Node>(mapping =>
             {
@@ -24,7 +22,11 @@ namespace Network.NHibernate
                 });
                 mapping.Bag(x => x.RelatedNodes, bag =>
                 {
-                    bag.Key(key => key.Column("StartNodeId"));
+                    bag.Key(key => 
+                    { 
+                        key.Column("StartNodeId");
+                        key.ForeignKey("FK_RelatedNode_Node_StartNodeId");
+                    });
                     bag.Table("RelatedNode");
                     bag.Cascade(Cascade.All);
                     bag.Fetch(CollectionFetchMode.Subselect);
@@ -33,17 +35,18 @@ namespace Network.NHibernate
 
             mapper.Component<RelatedNode>(component =>
             {
+                component.Parent(x => x.Start);
+                component.ManyToOne(x => x.End, manyToOne =>
+                {
+                    manyToOne.Column("EndNodeId");
+                    manyToOne.ForeignKey("FK_RelatedNode_Node_EndNodeId");
+                    manyToOne.Cascade(Cascade.Persist);
+                });
                 component.ManyToOne(x => x.Relationship, manyToOne =>
                 {
                     manyToOne.Column("RelationshipId");
                     manyToOne.ForeignKey("FK_RelatedNode_Relationship_RelationshipId");
                     manyToOne.Cascade(Cascade.Persist.Include(Cascade.Remove));
-                });
-                component.ManyToOne(x => x.End, manyToOne =>
-                {
-                    manyToOne.Column("EndNodeId");
-                    manyToOne.ForeignKey("FK_RelatedNode_Node_EndNodeId");
-                    manyToOne.Cascade(Cascade.All);
                 });
             });
 

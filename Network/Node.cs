@@ -22,25 +22,25 @@ namespace Network
 
         public virtual IList<RelatedNode> RelatedNodes { get; protected set; }
 
-        public virtual void LinkTo(Node other, int distance)
+        public virtual void LinkTo(Node end, int distance)
         {
-            if (other == this)
+            if (end == this)
             {
                 throw new InvalidOperationException("Cannot relate a Node to itself");
             }
-            if (RelatedNodes.Any(x => x.End == other))
+            if (RelatedNodes.Any(x => x.End == end))
             {
-                throw new ArgumentException("This node is already related to the node", "other");
+                throw new ArgumentException("This node is already related to the node", "end");
             }
             var relationship = new Relationship(distance);
-            var relatedNode = new RelatedNode(other, relationship);
+            var relatedNode = new RelatedNode(this, end, relationship);
             RelatedNodes.Add(relatedNode);
-            other.AddRelatedNodeInternal(this, relationship);
+            end.AddRelatedNodeInternal(this, relationship);
         }
 
-        protected void AddRelatedNodeInternal(Node other, Relationship relationship)
+        protected void AddRelatedNodeInternal(Node end, Relationship relationship)
         {
-            var relatedNode = new RelatedNode(other, relationship);
+            var relatedNode = new RelatedNode(this, end, relationship);
             RelatedNodes.Add(relatedNode);
         }
 
