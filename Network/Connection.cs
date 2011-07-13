@@ -2,25 +2,30 @@ using System;
 
 namespace Network
 {
-    public class RelatedNode : IEquatable<RelatedNode>
+    public class Connection : IEquatable<Connection>
     {
-        public RelatedNode(Node start, Node end, Relationship relationship)
+        public Connection(Node start, Node end, ConnectionQuality quality)
         {
             Start = start;
             End = end;
-            Relationship = relationship;
+            Quality = quality;
         }
 
-        protected RelatedNode() {}
+        protected Connection() {}
         
         public virtual Node Start { get; protected set; }
 
         public virtual Node End { get; protected set; }
 
-        public virtual Relationship Relationship { get; protected set; }
+        public virtual ConnectionQuality Quality { get; protected set; }
+
+        public void UpdateQuality(ConnectionQuality quality)
+        {
+            Quality = quality;
+        }
 
         #region equals 
-        public bool Equals(RelatedNode other)
+        public bool Equals(Connection other)
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
@@ -31,8 +36,8 @@ namespace Network
         {
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != typeof (RelatedNode)) return false;
-            return Equals((RelatedNode) obj);
+            if (obj.GetType() != typeof (Connection)) return false;
+            return Equals((Connection) obj);
         }
 
         public override int GetHashCode()
@@ -43,12 +48,12 @@ namespace Network
             }
         }
 
-        public static bool operator ==(RelatedNode left, RelatedNode right)
+        public static bool operator ==(Connection left, Connection right)
         {
             return Equals(left, right);
         }
 
-        public static bool operator !=(RelatedNode left, RelatedNode right)
+        public static bool operator !=(Connection left, Connection right)
         {
             return !Equals(left, right);
         }

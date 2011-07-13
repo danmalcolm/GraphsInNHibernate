@@ -20,46 +20,36 @@ namespace Network.NHibernate
                     map.Length(50);
                     map.Column("NodeName");
                 });
-                node.Bag(x => x.RelatedNodes, bag =>
+                node.Bag(x => x.Connections, bag =>
                 {
                     bag.Key(key => 
                     { 
                         key.Column("StartNodeId");
                         key.ForeignKey("FK_RelatedNode_Node_StartNodeId");
                     });
-                    bag.Table("RelatedNode");
+                    bag.Table("Connection");
                     bag.Cascade(Cascade.All.Include(Cascade.Remove));
                     bag.Fetch(CollectionFetchMode.Subselect);
                 });
             });
 
-            mapper.Component<RelatedNode>(relatedNode =>
+            mapper.Component<Connection>(connection =>
             {
-                relatedNode.Parent(x => x.Start);
-                relatedNode.ManyToOne(x => x.End, manyToOne =>
+                connection.Parent(x => x.Start);
+                connection.ManyToOne(x => x.End, manyToOne =>
                 {
                     manyToOne.Column("EndNodeId");
                     manyToOne.ForeignKey("FK_RelatedNode_Node_EndNodeId");
                     manyToOne.Cascade(Cascade.Persist);
                     manyToOne.NotNullable(true);
                 });
-                relatedNode.ManyToOne(x => x.Relationship, manyToOne =>
-                {
-                    manyToOne.Column("RelationshipId");
-                    manyToOne.ForeignKey("FK_RelatedNode_Relationship_RelationshipId");
-                    manyToOne.Cascade(Cascade.All.Include(Cascade.Remove));
-                    manyToOne.NotNullable(true);
-                });
+                connection.Component(x => x.Quality, c => {});
             });
 
-            mapper.Class<Relationship>(relationship =>
+            mapper.Component<ConnectionQuality>(connectionQuality =>
             {
-                relationship.Id(x => x.Id, map =>
-                {
-                    map.Column("RelationshipId");
-                    map.Generator(Generators.GuidComb);
-                });
-                relationship.Property(x => x.Distance);
+                connectionQuality.Property(x => x.UploadMbps);
+                connectionQuality.Property(x => x.DownloadMbps);
             });
             configuration.AddMapping(mapper.CompileMappingForAllExplicitAddedEntities());
         }

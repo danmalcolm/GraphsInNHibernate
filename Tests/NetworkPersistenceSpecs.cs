@@ -4,10 +4,12 @@ using System.Linq;
 using Network;
 using NHibernate;
 using NUnit.Framework;
-using NHibernate.Linq;
 
-namespace Tests.GraphPersistenceSpecs
+namespace Tests.NetworkPersistenceSpecs
 {
+    /// <summary>
+    /// base class for specs
+    /// </summary>
     public class PersistenceSpecification : ContextSpecification
     {
         /// <summary>
@@ -20,6 +22,9 @@ namespace Tests.GraphPersistenceSpecs
         protected const int E = 4;
 
         private readonly ISessionFactory sessionFactory = TestConfigurationSource.SessionFactory;
+        protected ConnectionQuality LowConnectionQuality = new ConnectionQuality(2, 1);
+        protected ConnectionQuality MediumConnectionQuality = new ConnectionQuality(5, 1);
+        protected ConnectionQuality HighConnectionQuality = new ConnectionQuality(10, 1);
 
         protected void InNewSession(Action<ISession> action)
         {
@@ -36,12 +41,12 @@ namespace Tests.GraphPersistenceSpecs
             InNewSession(session =>
             {
                 var startNode = session.GetNode(originalNodeA.Id);
-                Assert.That(startNode.IsRelatedTo(originalNodeB), Is.False, string.Format("{0} is related to {1}", startNode, originalNodeB));
+                Assert.That(startNode.IsConnectedTo(originalNodeB), Is.False, string.Format("{0} is related to {1}", startNode, originalNodeB));
             });
             InNewSession(session =>
             {
                 var endNode = session.GetNode(originalNodeB.Id);
-                Assert.That(endNode.IsRelatedTo(originalNodeA), Is.False, string.Format("{0} is related to {1}", endNode, originalNodeA));
+                Assert.That(endNode.IsConnectedTo(originalNodeA), Is.False, string.Format("{0} is related to {1}", endNode, originalNodeA));
             });
         }
 
@@ -50,12 +55,12 @@ namespace Tests.GraphPersistenceSpecs
             InNewSession(session =>
             {
                 var startNode = session.GetNode(originalNodeA.Id);
-                Assert.That(startNode.IsRelatedTo(originalNodeB), Is.True, string.Format("{0} is not related to {1}", startNode, originalNodeB));
+                Assert.That(startNode.IsConnectedTo(originalNodeB), Is.True, string.Format("{0} is not related to {1}", startNode, originalNodeB));
             });
             InNewSession(session =>
             {
                 var endNode = session.GetNode(originalNodeB.Id);
-                Assert.That(endNode.IsRelatedTo(originalNodeA), Is.True, string.Format("{0} is not related to {1}", endNode, originalNodeA));
+                Assert.That(endNode.IsConnectedTo(originalNodeA), Is.True, string.Format("{0} is not related to {1}", endNode, originalNodeA));
             });
         }
 
@@ -91,7 +96,7 @@ namespace Tests.GraphPersistenceSpecs
     }
 
     [TestFixture]
-    public class when_saving_node_with_single_related_node : PersistenceSpecification
+    public class when_saving_node_with_single_connected_node : PersistenceSpecification
     {
         private Node originalStartNode;
         private Node originalEndNode;
@@ -102,7 +107,7 @@ namespace Tests.GraphPersistenceSpecs
             { 
                 originalStartNode = new Node("A");
                 originalEndNode = new Node("B");
-                originalStartNode.LinkTo(originalEndNode, 10);
+                originalStartNode.AddConnection(originalEndNode, HighConnectionQuality, MediumConnectionQuality);
                 session.SaveOrUpdate(originalStartNode); 
             });
         }
@@ -118,12 +123,12 @@ namespace Tests.GraphPersistenceSpecs
         }
 
         [Test]
-        public void start_node_on_related_node_should_point_to_owner()
+        public void start_node_on_end_node_should_point_to_owner()
         {
             InNewSession(session =>
             {
                 var retrieved = session.GetNode(originalStartNode.Id);
-                var relatedNode = retrieved.RelatedNodes.Single();
+                var relatedNode = retrieved.Connections.Single();
                 Assert.That(relatedNode, Is.Not.Null);
                 Assert.That(relatedNode.Start, Is.SameAs(retrieved));
             });
@@ -151,8 +156,8 @@ namespace Tests.GraphPersistenceSpecs
             InNewSession(session =>
             {
                 var endNode = session.GetNode(originalEndNode.Id);
-                Assert.That(endNode.RelatedNodes.Count, Is.EqualTo(1));
-                var startNode = endNode.RelatedNodes.Single().End;
+                Assert.That(endNode.Connections.Count, Is.EqualTo(1));
+                var startNode = endNode.Connections.Single().End;
                 Assert.That(startNode, Is.EqualTo(originalStartNode));
             });
         }
@@ -167,10 +172,10 @@ namespace Tests.GraphPersistenceSpecs
             InNewSession(session =>
             {
                 originalNodes = "ABCDE".Select(name => new Node(name.ToString())).ToList(); // node for each char
-                originalNodes[A].LinkTo(originalNodes[B], 10);
-                originalNodes[B].LinkTo(originalNodes[C], 15);
-                originalNodes[C].LinkTo(originalNodes[D], 20);
-                originalNodes[D].LinkTo(originalNodes[E], 25);
+                originalNodes[A].AddConnection(originalNodes[B], HighConnectionQuality, MediumConnectionQuality);
+                originalNodes[B].AddConnection(originalNodes[C], HighConnectionQuality, MediumConnectionQuality);
+                originalNodes[C].AddConnection(originalNodes[D], HighConnectionQuality, MediumConnectionQuality);
+                originalNodes[D].AddConnection(originalNodes[E], HighConnectionQuality, MediumConnectionQuality);
                 session.SaveOrUpdate(originalNodes[0]);
             });
         }
@@ -207,10 +212,10 @@ namespace Tests.GraphPersistenceSpecs
             InNewSession(session =>
             {
                 originalNodes = CreateNodesAtoE(); // node for each char
-                originalNodes[A].LinkTo(originalNodes[B], 10);
-                originalNodes[B].LinkTo(originalNodes[C], 15);
-                originalNodes[C].LinkTo(originalNodes[D], 20);
-                originalNodes[D].LinkTo(originalNodes[E], 25);
+                originalNodes[A].AddConnection(originalNodes[B], HighConnectionQuality, MediumConnectionQuality);
+                originalNodes[B].AddConnection(originalNodes[C], HighConnectionQuality, MediumConnectionQuality);
+                originalNodes[C].AddConnection(originalNodes[D], HighConnectionQuality, MediumConnectionQuality);
+                originalNodes[D].AddConnection(originalNodes[E], HighConnectionQuality, MediumConnectionQuality);
                 session.SaveOrUpdate(originalNodes[A]);
             });
 
@@ -219,8 +224,8 @@ namespace Tests.GraphPersistenceSpecs
                 var nodeB = session.GetNode(originalNodes[B].Id);
                 var nodeC = session.GetNode(originalNodes[C].Id);
                 var nodeD = session.GetNode(originalNodes[D].Id);
-                nodeB.UnlinkFrom(nodeC);
-                nodeD.UnlinkFrom(nodeC);
+                nodeB.RemoveConnection(nodeC);
+                nodeD.RemoveConnection(nodeC);
             });
         }
 
@@ -262,17 +267,17 @@ namespace Tests.GraphPersistenceSpecs
             InNewSession(session =>
             {
                 originalNodes = CreateNodesAtoE(); // node for each char
-                originalNodes[A].LinkTo(originalNodes[B], 10);
-                originalNodes[B].LinkTo(originalNodes[C], 15);
-                originalNodes[C].LinkTo(originalNodes[D], 20);
-                originalNodes[D].LinkTo(originalNodes[E], 25);
+                originalNodes[A].AddConnection(originalNodes[B], HighConnectionQuality, MediumConnectionQuality);
+                originalNodes[B].AddConnection(originalNodes[C], HighConnectionQuality, MediumConnectionQuality);
+                originalNodes[C].AddConnection(originalNodes[D], HighConnectionQuality, MediumConnectionQuality);
+                originalNodes[D].AddConnection(originalNodes[E], HighConnectionQuality, MediumConnectionQuality);
                 session.SaveOrUpdate(originalNodes[A]);
             });
 
             InNewSession(session =>
             {
                 var nodeC = session.GetNode(originalNodes[C].Id);
-                nodeC.UnlinkFromAll();
+                nodeC.RemoveAllConnections();
                 session.Delete(nodeC);
             });
         }
@@ -304,10 +309,10 @@ namespace Tests.GraphPersistenceSpecs
             InNewSession(session =>
             {
                 var nodeB = session.GetNode(originalNodes[B].Id);
-                Assert.That(nodeB.RelatedNodes.Count, Is.EqualTo(1));
+                Assert.That(nodeB.Connections.Count, Is.EqualTo(1));
 
                 var nodeD = session.GetNode(originalNodes[D].Id);
-                Assert.That(nodeD.RelatedNodes.Count, Is.EqualTo(1));
+                Assert.That(nodeD.Connections.Count, Is.EqualTo(1));
             });
         }
 
@@ -316,26 +321,24 @@ namespace Tests.GraphPersistenceSpecs
     public class when_unlinking_one_of_many_related_nodes : PersistenceSpecification
     {
         private List<Node> originalNodes = new List<Node>();
-        private Relationship relationshipBetweenAandB;
 
         protected override void because()
         {
             InNewSession(session =>
             {
                 originalNodes = CreateNodesAtoE();
-                originalNodes[A].LinkTo(originalNodes[B], 10);
-                originalNodes[A].LinkTo(originalNodes[C], 15);
-                originalNodes[A].LinkTo(originalNodes[D], 20);
-                originalNodes[A].LinkTo(originalNodes[E], 25);
+                originalNodes[A].AddConnection(originalNodes[B], HighConnectionQuality, MediumConnectionQuality);
+                originalNodes[A].AddConnection(originalNodes[C], HighConnectionQuality, MediumConnectionQuality);
+                originalNodes[A].AddConnection(originalNodes[D], HighConnectionQuality, MediumConnectionQuality);
+                originalNodes[A].AddConnection(originalNodes[E], HighConnectionQuality, MediumConnectionQuality);
                 session.SaveOrUpdate(originalNodes[A]);
-                relationshipBetweenAandB = originalNodes[A].GetLink(originalNodes[B]).Relationship;
             });
 
             InNewSession(session =>
             {
                 var nodeA = session.GetNode(originalNodes[A].Id);
                 var nodeB = session.GetNode(originalNodes[B].Id);
-                nodeA.UnlinkFrom(nodeB);
+                nodeA.RemoveConnection(nodeB);
             });
         }
 
@@ -365,17 +368,6 @@ namespace Tests.GraphPersistenceSpecs
         {
             AssertNodesNotRelated(originalNodes[A], originalNodes[B]);
         }
-
-        [Test]
-        public void relationship_between_unlinked_nodes_should_be_removed()
-        {
-            InNewSession(session =>
-            {
-                var relationship = session.Get<Relationship>(relationshipBetweenAandB.Id);
-                Assert.That(relationship, Is.Null);
-            });
-        }
-
     }
 
     public static class SessionExtensions

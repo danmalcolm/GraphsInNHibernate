@@ -13,75 +13,80 @@ namespace Network
 
         protected Node()
         {
-            RelatedNodes = new List<RelatedNode>();
+            Connections = new List<Connection>();
         }
 
         public virtual Guid Id { get; protected set; }
 
         public virtual string Name { get; set; }
 
-        public virtual IList<RelatedNode> RelatedNodes { get; protected set; }
+        public virtual IList<Connection> Connections { get; protected set; }
 
-        public virtual void LinkTo(Node end, int distance)
+        /// <summary>
+        /// Adds connection between this and the specified end node
+        /// </summary>
+        /// <param name="end"></param>
+        /// <param name="quality">The properties of the connection between this node and the end node</param>
+        /// <param name="endQuality">The quality of the connection between the end node and this node</param>
+        public virtual void AddConnection(Node end, ConnectionQuality quality, ConnectionQuality endQuality)
         {
             if (end == this)
             {
-                throw new InvalidOperationException("Cannot relate a Node to itself");
+                throw new InvalidOperationException("Cannot add a connection from a node to itself");
             }
-            if (RelatedNodes.Any(x => x.End == end))
+            if (Connections.Any(x => x.End == end))
             {
-                throw new ArgumentException("This node is already related to the node", "end");
+                throw new ArgumentException("A connection already exists with this node", "end");
             }
-            var relationship = new Relationship(distance);
-            var relatedNode = new RelatedNode(this, end, relationship);
-            RelatedNodes.Add(relatedNode);
-            end.AddRelatedNodeInternal(this, relationship);
+            var relatedNode = new Connection(this, end, quality);
+            Connections.Add(relatedNode);
+            end.AddConnectionInternal(this, endQuality);
         }
 
-        protected void AddRelatedNodeInternal(Node end, Relationship relationship)
+        protected void AddConnectionInternal(Node end, ConnectionQuality quality)
         {
-            var relatedNode = new RelatedNode(this, end, relationship);
-            RelatedNodes.Add(relatedNode);
+            var relatedNode = new Connection(this, end, quality);
+            Connections.Add(relatedNode);
         }
 
-        public virtual bool IsRelatedTo(Node node)
+        public virtual bool IsConnectedTo(Node node)
         {
-            return RelatedNodes.Any(x => x.End == node);
+            return Connections.Any(x => x.End == node);
         }
 
-        public virtual RelatedNode GetLink(Node node)
+        public virtual Connection GetConnection(Node node)
         {
-            if(!IsRelatedTo(node))
+            if(!IsConnectedTo(node))
+            {
+                throw new ArgumentException("Not connected to node " + node);
+            }
+            return Connections.Single(x => x.End == node);
+        }
+
+        public virtual void RemoveConnection(Node node)
+        {
+            if (!IsConnectedTo(node))
             {
                 throw new ArgumentException("Not related to node " + node);
             }
-            return RelatedNodes.Single(x => x.End == node);
+            var relatedNode = GetConnection(node);
+            Connections.Remove(relatedNode);
+            node.RemoveConnectionInternal(this);
         }
 
-        public virtual void UnlinkFrom(Node node)
+        protected void RemoveConnectionInternal(Node end)
         {
-            if (!IsRelatedTo(node))
+            var relatedNode = Connections.Single(x => x.End == end);
+            Connections.Remove(relatedNode);
+        }
+
+        public virtual void RemoveAllConnections()
+        {
+            foreach (Node end in Connections.Select(x => x.End))
             {
-                throw new ArgumentException("Not related to node " + node);
+                end.RemoveConnectionInternal(this);
             }
-            var relatedNode = GetLink(node);
-            RelatedNodes.Remove(relatedNode);
-            node.RemoveRelatedNodeInternal(this);
-        }
-
-        protected void RemoveRelatedNodeInternal(Node node)
-        {
-            var relatedNode = RelatedNodes.Single(x => x.End == node);
-            RelatedNodes.Remove(relatedNode);
-        }
-
-        public virtual void UnlinkFromAll()
-        {
-            foreach (Node end in RelatedNodes.Select(x => x.End))
-            {
-                end.RemoveRelatedNodeInternal(this);
-            }
-            RelatedNodes.Clear();
+            Connections.Clear();
         }
 
         #region Equals / hashcode 
