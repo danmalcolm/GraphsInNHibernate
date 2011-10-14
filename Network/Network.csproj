@@ -57,6 +57,9 @@
   <ItemGroup>
     <Compile Include="Connection.cs" />
     <Compile Include="ConnectionQuality.cs" />
+    <Compile Include="NHibernate\InterceptingCommand.cs" />
+    <Compile Include="NHibernate\InterceptingSqlClientDriver.cs" />
+    <Compile Include="NHibernate\Logging.cs" />
     <Compile Include="NHibernate\Mapping.cs" />
     <Compile Include="Node.cs" />
     <Compile Include="NodeDisplayExtensions.cs" />

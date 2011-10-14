@@ -4,6 +4,7 @@ using System.Linq;
 using Network;
 using NHibernate;
 using NUnit.Framework;
+using Network.NHibernate;
 
 namespace Tests.NetworkPersistenceSpecs
 {
@@ -87,11 +88,19 @@ namespace Tests.NetworkPersistenceSpecs
         [Test]
         public void node_should_be_saved()
         {
-            InNewSession(session =>
+            using(var spy = new NHibernateSqlLogSpy())
             {
-                var retrieved = session.GetNode(original.Id);
-                Assert.That(retrieved, Is.Not.Null);
-            });
+                InNewSession(session =>
+                {
+                    var retrieved = session.GetNode(original.Id);
+                    Assert.That(retrieved, Is.Not.Null);
+                });
+                var events = spy.Appender.GetEvents();
+                foreach(var e in events)
+                {
+                     Console.WriteLine(e.RenderedMessage);
+                }
+            }
         }
     }
 
@@ -169,15 +178,25 @@ namespace Tests.NetworkPersistenceSpecs
        
         protected override void because()
         {
-            InNewSession(session =>
+            using (var spy = new NHibernateSqlLogSpy())
             {
-                originalNodes = "ABCDE".Select(name => new Node(name.ToString())).ToList(); // node for each char
-                originalNodes[A].AddConnection(originalNodes[B], HighConnectionQuality, MediumConnectionQuality);
-                originalNodes[B].AddConnection(originalNodes[C], HighConnectionQuality, MediumConnectionQuality);
-                originalNodes[C].AddConnection(originalNodes[D], HighConnectionQuality, MediumConnectionQuality);
-                originalNodes[D].AddConnection(originalNodes[E], HighConnectionQuality, MediumConnectionQuality);
-                session.SaveOrUpdate(originalNodes[0]);
-            });
+                InNewSession(session =>
+                {
+                    originalNodes = "ABCDE".Select(name => new Node(name.ToString())).ToList(); // node for each char
+                    originalNodes[A].AddConnection(originalNodes[B], HighConnectionQuality, MediumConnectionQuality);
+                    originalNodes[B].AddConnection(originalNodes[C], HighConnectionQuality, MediumConnectionQuality);
+                    originalNodes[C].AddConnection(originalNodes[D], HighConnectionQuality, MediumConnectionQuality);
+                    originalNodes[D].AddConnection(originalNodes[E], HighConnectionQuality, MediumConnectionQuality);
+                    session.SaveOrUpdate(originalNodes[0]);
+                });
+                var events = spy.Appender.GetEvents();
+                foreach (var e in events)
+                {
+                    Console.WriteLine(e.RenderedMessage);
+                }
+            }
+
+           
         }
 
         [Test]

@@ -35,12 +35,12 @@ namespace Tests
                     db.Dialect<MsSql2008Dialect>();
                     db.ConnectionStringName = "sqlexpress";
                     db.BatchSize = 100;
-                    db.LogFormattedSql = true;
-                    db.LogSqlInConsole = true;
+                    //db.LogFormattedSql = true;
+                    db.LogSqlInConsole = false;
+                    //db.Driver<InterceptingSqlClientDriver>();
                 }).AddProperties(new Dictionary<string, string> { { "generate_statistics", "true"} });
             new Mapping().ApplyTo(configuration);
             BuildSchema(configuration);
-
             
             return configuration.BuildSessionFactory();
         }
